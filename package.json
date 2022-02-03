@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "load-council": "sh scripts/load-council.sh",
     "test": "npx hardhat test --config hardhat.config.test.ts ./test/*.ts",
     "test:quick": "npx hardhat test --config hardhat.config.test.ts ./test/*.ts --no-compile"
 
@@ -19,6 +20,7 @@
   },
   "homepage": "https://github.com/element-fi/peripherals#readme",
   "devDependencies": {
+    "@openzeppelin/contracts": "^4.4.2",
     "@nomiclabs/hardhat-ethers": "^2.0.2",
     "@nomiclabs/hardhat-waffle": "^2.0.1",
     "@boringcrypto/boring-solidity": "boringcrypto/BoringSolidity#e06e943",

@@ -7,7 +7,7 @@ import "../interfaces/IERC20Permit.sol";
 // This default erc20 library is designed for max efficiency and security.
 // WARNING: By default it does not include totalSupply which breaks the ERC20 standard
 //          to use a fully standard compliant ERC20 use 'ERC20PermitWithSupply"
-contract ERC20Permit is IERC20Permit {
+abstract contract ERC20Permit is IERC20Permit {
     // --- ERC20 Data ---
     // The name of the erc20 token
     string public name;
