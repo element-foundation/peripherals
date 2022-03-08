@@ -8,6 +8,7 @@ import "@boringcrypto/boring-solidity/contracts/BoringBatchable.sol";
 import "@boringcrypto/boring-solidity/contracts/BoringOwnable.sol";
 import "./libraries/SignedSafeMath.sol";
 import "./interfaces/IRewarder.sol";
+import "./interfaces/ILockingVault.sol";
 
 // Remove Migrator logic --
 // remove 
@@ -36,7 +37,7 @@ contract MCMod is BoringOwnable, BoringBatchable {
 
     /// @notice Address of SUSHI contract.
     IERC20 public immutable SUSHI;
-
+    
     /// @notice Info of each MCV2 pool.
     PoolInfo[] public poolInfo;
     /// @notice Address of the LP token for each MCV2 pool.
@@ -47,6 +48,9 @@ contract MCMod is BoringOwnable, BoringBatchable {
     // SUSHI tokens created per block.
     uint256 public sushiPerBlock;
 
+    // locking vault to lock tokens in
+    ILockingVault public lockingVault;
+ 
     /// @notice Info of each user that stakes LP tokens.
     mapping (uint256 => mapping (address => UserInfo)) public userInfo;
     /// @dev Total allocation points. Must be the sum of all allocation points in all pools.
@@ -65,9 +69,13 @@ contract MCMod is BoringOwnable, BoringBatchable {
 
     /// @param _sushiPerBlock Token emission per block.
     /// @param _sushi The SUSHI token contract address.
-    constructor(IERC20 _sushi, uint256 _sushiPerBlock) public {
+    constructor(IERC20 _sushi, uint256 _sushiPerBlock, ILockingVault _LockingVault) public {
         sushiPerBlock = _sushiPerBlock;
         SUSHI = _sushi;
+
+        // set locking vault and approve tokens
+        lockingVault = _LockingVault;
+        _sushi.approve(address(_LockingVault), uint256(-1));
     }
 
 
@@ -191,7 +199,7 @@ contract MCMod is BoringOwnable, BoringBatchable {
         if (address(_rewarder) != address(0)) {
             _rewarder.onSushiReward(pid, msg.sender, to, 0, user.amount);
         }
-        
+
         lpToken[pid].safeTransfer(to, amount);
 
         emit Withdraw(msg.sender, pid, amount, to);
@@ -211,7 +219,7 @@ contract MCMod is BoringOwnable, BoringBatchable {
 
         // Interactions
         if (_pendingSushi != 0) {
-            SUSHI.safeTransfer(to, _pendingSushi);
+            _harvestAndLock(to, _pendingSushi);
         }
         
         IRewarder _rewarder = rewarder[pid];
@@ -237,7 +245,7 @@ contract MCMod is BoringOwnable, BoringBatchable {
         user.amount = user.amount.sub(amount);
         
         // Interactions
-        SUSHI.safeTransfer(to, _pendingSushi);
+        _harvestAndLock(to, _pendingSushi);
 
         IRewarder _rewarder = rewarder[pid];
         if (address(_rewarder) != address(0)) {
@@ -267,5 +275,11 @@ contract MCMod is BoringOwnable, BoringBatchable {
         // Note: transfer can fail or succeed if `amount` is zero.
         lpToken[pid].safeTransfer(to, amount);
         emit EmergencyWithdraw(msg.sender, pid, amount, to);
+    }
+
+    /// @notice Helper function that locks the harvested value in the Locking Vault
+    /// @dev does not handle extra beneficiary logic for simplicity
+    function _harvestAndLock(address _to, uint256 _amount) internal {
+        lockingVault.deposit(_to, _amount, msg.sender);
     }
 }
