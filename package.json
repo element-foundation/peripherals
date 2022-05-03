@@ -7,7 +7,6 @@
     "load-council": "sh scripts/load-council.sh",
     "test": "npx hardhat test --config hardhat.config.test.ts ./test/*.ts",
     "test:quick": "npx hardhat test --config hardhat.config.test.ts ./test/*.ts --no-compile"
-
   },
   "repository": {
     "type": "git",
